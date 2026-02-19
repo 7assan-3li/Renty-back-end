@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CarController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.login');
 });
 
 
@@ -50,5 +50,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/services', function () {
             return "Services Page (Coming Soon)";
         })->name('services');
+
+        Route::post('/profile/update', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/password/update', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('password.update');
     });
 });

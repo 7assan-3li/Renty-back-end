@@ -31,6 +31,8 @@
     </div>
 
     @stack('modals')
+    @include('partials.profile-modals')
+
 
     <!-- Link to external JS -->
     <script src="{{ asset('js/admin.js') }}"></script>

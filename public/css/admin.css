@@ -95,7 +95,7 @@ html[dir="rtl"] .main-content { margin-right: var(--sidebar-width); margin-left:
 html[dir="ltr"] .main-content { margin-left: var(--sidebar-width); margin-right: 0; }
 
 header {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: flex-end; align-items: center;
     background: var(--header-bg); padding: 15px 30px; border-radius: 12px;
     box-shadow: var(--card-shadow); margin-bottom: 30px; position: sticky; top: 0; z-index: 90;
     transition: background 0.3s;
@@ -181,4 +181,29 @@ tr:hover { background-color: var(--table-header-bg); }
 }
 .page-item .page-link:hover { background: var(--table-header-bg); border-color: var(--primary-color); }
 .page-item.active .page-link { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
-.page-item.disabled .page-link { opacity: 0.5; pointer-events: none; }
+
+/* --- User Profile Modal Styles --- */
+.profile-header-bg {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    padding: 30px; text-align: center; color: #fff; border-radius: 15px 15px 0 0; position: relative;
+}
+.profile-avatar {
+    width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--modal-bg);
+    object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+.profile-status {
+    width: 15px; height: 15px; background: #4caf50; border: 2px solid var(--modal-bg);
+    border-radius: 50%; position: absolute; bottom: 5px; right: calc(50% - 45px + 5px);
+}
+.profile-actions { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.action-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px; background: var(--table-header-bg); border-radius: 8px; cursor: pointer; transition: 0.2s; color: var(--text-color);
+}
+.action-item:hover { background: var(--input-border); }
+.action-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--status-bg-blue); color: var(--primary-color); display: flex; align-items: center; justify-content: center; }
+
+/* Ensure modal looks good on mobile */
+@media (max-width: 500px) {
+    .modal { width: 95%; max-width: 400px; padding: 20px; }
+}
