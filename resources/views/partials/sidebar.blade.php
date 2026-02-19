@@ -28,7 +28,7 @@
                 class="menu-item {{ request()->routeIs('admin.finance.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-chart-line"></i><span>{{ __('financeOverview') }}</span>
         </a>
-        <a href="{{ route('admin.accounts') }}"
+        {{-- <a href="{{ route('admin.accounts') }}"
                 class="menu-item {{ request()->routeIs('admin.accounts') ? 'active' : '' }}">
                 <i class="fa-solid fa-building-columns"></i><span>{{ __('accounts') }}</span>
         </a>
@@ -41,7 +41,7 @@
         <a href="{{ route('admin.services') }}"
                 class="menu-item {{ request()->routeIs('admin.services') ? 'active' : '' }}">
                 <i class="fa-solid fa-concierge-bell"></i><span>{{ __('services') }}</span>
-        </a>
+        </a> --}}
 
         <!-- Logout -->
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
