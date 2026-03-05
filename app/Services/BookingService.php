@@ -17,10 +17,14 @@ class BookingService
         $car = Car::findOrFail($data['car_id']);
         $startDate = Carbon::parse($data['start_date']);
         $endDate = Carbon::parse($data['end_date']);
-        $days = $startDate->diffInDays($endDate) + 1; // Include start day
+        
+        // حساب عدد الأيام
+        $days = $startDate->diffInDays($endDate) + 1; 
+        
+        // حساب السعر الإجمالي
         $totalPrice = $car->price_per_day * $days;
 
-        // Check availability
+        // التحقق من توفر السيارة
         $isAvailable = !Booking::where('car_id', $car->id)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('start_date', [$startDate, $endDate])
@@ -30,6 +34,7 @@ class BookingService
                             ->where('end_date', '>', $endDate);
                     });
             })
+            ->where('status', '!=', 'cancelled') // لا نحسب الحجوزات الملغية
             ->exists();
 
         if (!$isAvailable) {
@@ -37,22 +42,26 @@ class BookingService
         }
 
         return DB::transaction(function () use ($userId, $data, $totalPrice, $car) {
-            // Create Booking
+            // 1. إنشاء سجل الحجز
             $booking = Booking::create([
                 'user_id' => $userId,
                 'car_id' => $car->id,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'total_price' => $totalPrice,
-                'status' => \App\Constants\BookingStatus::PENDING,
+                'status' => 'pending',
                 'payment_status' => 'unpaid',
             ]);
 
-            // Create Stripe Payment Intent
+            // 2. إعداد Stripe
             Stripe::setApiKey(config('services.stripe.secret'));
 
+            // ✅ حل مشكلة الخطأ FATAL ERROR:
+            // نستخدم round لتقريب أي كسور ناتجة عن الحسابات، ثم نحولها لـ (int) صريح.
+            $amountInCents = (int) round($totalPrice * 100);
+
             $paymentIntent = PaymentIntent::create([
-                'amount' => $totalPrice * 100, // Amount in cents
+                'amount' => $amountInCents, // Stripe سيستلم الآن رقماً صحيحاً 100%
                 'currency' => 'usd',
                 'automatic_payment_methods' => [
                     'enabled' => true,
@@ -63,7 +72,7 @@ class BookingService
                 ],
             ]);
 
-            // Create Payment Record
+            // 3. إنشاء سجل الدفع الأولي
             Payment::create([
                 'user_id' => $userId,
                 'booking_id' => $booking->id,
@@ -80,17 +89,36 @@ class BookingService
         });
     }
 
+    public function confirmPayment(Booking $booking, $transactionId)
+    {
+        return DB::transaction(function () use ($booking, $transactionId) {
+            // تحديث سجل الدفع
+            $booking->payment()->update([
+                'status' => 'succeeded',
+                'transaction_id' => $transactionId
+            ]);
+
+            // ✅ تحديث حالة الحجز إلى "done" و "paid" كما طلبت
+            $booking->update([
+                'payment_status' => 'paid',
+                'status' => 'done' 
+            ]);
+
+            // تحديث حالة السيارة إلى "محجوزة" إذا بدأ الإيجار اليوم
+            if (Carbon::parse($booking->start_date)->isToday() || Carbon::parse($booking->start_date)->isPast()) {
+                $booking->car->update(['status' => 'booked']);
+            }
+
+            return $booking;
+        });
+    }
+
     public function rateBooking(Booking $booking, $rating)
     {
         return DB::transaction(function () use ($booking, $rating) {
-            // Update Booking Rating
             $booking->update(['rating' => $rating]);
 
-            // Update Car Rating
             $car = $booking->car;
-
-            // Calculate new average
-            // New Rating = ((Old Rating * Old Count) + New Rating) / (Old Count + 1)
             $newCount = $car->rating_count + 1;
             $newRating = (($car->rating * $car->rating_count) + $rating) / $newCount;
 
@@ -98,30 +126,6 @@ class BookingService
                 'rating' => $newRating,
                 'rating_count' => $newCount,
             ]);
-
-            return $booking;
-        });
-    }
-
-    public function confirmPayment(Booking $booking, $transactionId)
-    {
-        return DB::transaction(function () use ($booking, $transactionId) {
-            // Update Payment Status
-            $booking->payment()->update([
-                'status' => 'succeeded',
-                'transaction_id' => $transactionId
-            ]);
-
-            // Auto-confirm booking upon payment success
-            $booking->update([
-                'payment_status' => 'paid',
-                'status' => \App\Constants\BookingStatus::CONFIRMED
-            ]);
-
-            // If booking starts today, update car status immediately
-            if (\Carbon\Carbon::parse($booking->start_date)->isToday() || \Carbon\Carbon::parse($booking->start_date)->isPast()) {
-                $booking->car->update(['status' => \App\Constants\CarStatus::BOOKED]);
-            }
 
             return $booking;
         });

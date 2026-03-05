@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\api\AuthController;
 
+
+Route::post('/send-otp', [AuthController::class, 'sendOtp']);
+Route::post('/send-registration-otp', [AuthController::class, 'sendRegistrationOtp']);
+// هذه الروابط محمية، لا يمكن الوصول إليها إلا للمستخدمين المسجلين
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/notifications', [\App\Http\Controllers\Api\BookingController::class, 'getNotifications']);
+
+    // أي روابط أخرى تحتاج تسجيل دخول توضع هنا
+});
+
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);

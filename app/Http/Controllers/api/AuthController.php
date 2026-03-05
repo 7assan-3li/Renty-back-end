@@ -10,9 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Cache; // للتعامل مع الذاكرة المؤقتة (Cache)
 
 class AuthController extends Controller
 {
+    /* =========================================================================
+    دالة التسجيل القديمة (تم تحويلها لتعليق)
+    =========================================================================
     public function register(Request $request)
     {
         $request->validate([
@@ -50,6 +54,100 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
             'message' => 'Account created. Please verify your email with the OTP sent.',
         ], 201);
+    }
+    =========================================================================
+    */
+
+    // =========================================================================
+    // 1. إرسال كود التحقق قبل إنشاء الحساب (باستخدام Cache)
+    // =========================================================================
+    public function sendRegistrationOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:users,email' // التأكد أن الإيميل غير مستخدم
+        ]);
+
+        $otp = rand(100000, 999999);
+
+        // حفظ الكود في الذاكرة المؤقتة للسيرفر لمدة 10 دقائق وليس في قاعدة البيانات
+        Cache::put('otp_register_' . $request->email, $otp, now()->addMinutes(10));
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\OtpMail($otp));
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم إرسال رمز التحقق للتسجيل بنجاح.'
+        ], 200);
+    }
+
+    // =========================================================================
+    // 2. إنشاء الحساب الفعلي بعد التأكد من صحة الكود
+    // =========================================================================
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed', // تأكد أن فلاتر يرسل password_confirmation أو احذف confirmed
+            'phone' => 'required|string|max:255',
+            'otp' => 'required|string' 
+        ]);
+
+        $cachedOtp = Cache::get('otp_register_' . $request->email);
+
+        if (!$cachedOtp || $cachedOtp != $request->otp) {
+            return response()->json(['message' => 'رمز التحقق غير صحيح أو منتهي الصلاحية'], 400);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'role' => UserRole::USER,
+            'email_verified_at' => now(), 
+        ]);
+
+        Cache::forget('otp_register_' . $request->email);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'message' => 'تم إنشاء الحساب وتفعيله بنجاح.',
+        ], 201);
+    }
+
+    public function sendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email' 
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        $otp = rand(100000, 999999);
+
+        $user->otp_code = (string) $otp; 
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp));
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح.'
+        ], 200);
     }
 
     public function verifyOtp(Request $request)
@@ -122,6 +220,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /* =========================================================================
+    دالة تسجيل الخروج القديمة (التي كانت تسبب الخطأ)
+    =========================================================================
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -129,6 +230,31 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Logged out successfully'
         ]);
+    }
+    ========================================================================= */
+
+    // =========================================================================
+    // الدالة الآمنة والنهائية لتسجيل الخروج (تحل مشكلة delete غير المعرفة)
+    // =========================================================================
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user) {
+            // استخدام tokens()->delete() يحذف جميع رموز الدخول من قاعدة البيانات بشكل آمن
+            // ولا يسبب خطأ أبداً حتى لو لم يتم التعرف على الرمز الحالي
+            $user->tokens()->delete();
+            
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged out successfully'
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'User not authenticated or no token provided'
+        ], 401);
     }
 
     public function user(Request $request)
