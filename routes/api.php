@@ -11,7 +11,9 @@ Route::post('/send-registration-otp', [AuthController::class, 'sendRegistrationO
 // هذه الروابط محمية، لا يمكن الوصول إليها إلا للمستخدمين المسجلين
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/notifications', [\App\Http\Controllers\Api\BookingController::class, 'getNotifications']);
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
 
     // أي روابط أخرى تحتاج تسجيل دخول توضع هنا
 });

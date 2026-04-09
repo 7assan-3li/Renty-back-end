@@ -98,25 +98,4 @@ class BookingController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-    // =====================================================================
-    // 🔔 دالة توليد الإشعارات المستنبطة (Inferred Notifications)
-    // =====================================================================
-    public function getNotifications(Request $request)
-    {
-        $notifications = $request->user()->notifications;
-
-        $formatted = $notifications->map(function ($notification) {
-            return [
-                'id' => $notification->id,
-                'type' => $notification->data['type'] ?? 'info',
-                'title' => $notification->data['title'] ?? 'Notification',
-                'message' => $notification->data['message'] ?? '',
-                'time' => $notification->created_at->diffForHumans(),
-                'read_at' => $notification->read_at,
-            ];
-        });
-
-        return response()->json($formatted);
-    }
 }

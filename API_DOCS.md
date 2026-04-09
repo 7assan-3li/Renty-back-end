@@ -7,10 +7,23 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
 
 ## 1. Authentication (Public)
 
-### Register
+### Send Registration OTP
 
 - **Method**: `POST`
+- **Endpoint**: `/send-registration-otp`
+- **Token Required**: No
+- **Body**:
+    ```json
+    {
+        "email": "john@example.com"
+    }
+    ```
+- **Description**: Sends an OTP to a new email address to verify it before account creation.
+
+### Register
+
 - **Endpoint**: `/register`
+- **Note**: This is the final step after verifying OTP from `/send-registration-otp`.
 - **Token Required**: No
 - **Body**:
     ```json
@@ -29,7 +42,7 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
     - `password`: `required`, `string`, `min:8`, `confirmed` (must match `password_confirmation`)
     - `phone`: `required`, `string`, `max:255`
 
-- **Description**: Creates a new user account and sends an OTP to the email. user status will be unverified.
+- **Description**: Creates a new user account if the OTP matches. user status will be verified automatically.
 
 ### Verify OTP
 
@@ -184,7 +197,7 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
 - **Method**: `POST`
 - **Endpoint**: `/logout`
 - **Token Required**: Yes
-- **Description**: Invalidates the current token.
+- **Description**: Invalidates all tokens for the user (Logs out from all devices).
 
 ---
 
@@ -287,7 +300,7 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
     }
     ```
     _Note: The Frontend must use `client_secret` with Stripe SDK to confirm payment. Backend handles webhook/confirmation logic._
-<!-- 
+
 ### Confirm Payment (Manual)
 
 - **Method**: `POST`
@@ -301,7 +314,7 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
     ```
 - **Validation Rules**:
     - `payment_intent_id`: `required`, `string`
-- **Description**: Verifies the payment with Stripe and updates the booking status to PAID. Call this after Stripe SDK returns success. -->
+- **Description**: Verifies the payment with Stripe and updates the booking status to PAID. Call this after Stripe SDK returns success. Triggers a **Booking Confirmation** notification.
 
 ### List My Bookings
 
@@ -326,3 +339,43 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
     - `rating`: `required`, `integer`, `min:1`, `max:5`
 
 - **Description**: Submits a rating for a specific booking. Can only be done once per booking.
+
+---
+
+## 6. Notifications (Protected)
+
+**Requires Header**: `Authorization: Bearer <token>`
+
+### List Notifications
+
+- **Method**: `GET`
+- **Endpoint**: `/notifications`
+- **Token Required**: Yes
+- **Description**: Returns all persistent notifications for the user.
+- **Response**:
+    ```json
+    [
+      {
+        "id": "uuid-string",
+        "type": "confirmation", // pending, confirmation, reminder, expired, info
+        "title": "Booking confirmed",
+        "message": "Your booking for Toyota Camry has been confirmed...",
+        "time": "2 minutes ago",
+        "read_at": null
+      }
+    ]
+    ```
+
+### Mark Notification as Read
+
+- **Method**: `POST`
+- **Endpoint**: `/notifications/{id}/read`
+- **Token Required**: Yes
+- **Description**: Marks a specific notification as read.
+
+### Mark All as Read
+
+- **Method**: `POST`
+- **Endpoint**: `/notifications/read-all`
+- **Token Required**: Yes
+- **Description**: Marks all unread notifications for the user as read.
