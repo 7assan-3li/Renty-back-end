@@ -104,65 +104,19 @@ class BookingController extends Controller
     // =====================================================================
     public function getNotifications(Request $request)
     {
-        // جلب كل حجوزات المستخدم مع تفاصيل السيارة
-        $bookings = \App\Models\Booking::with('car')->where('user_id', $request->user()->id)->get();
-        
-        $notifications = collect();
-        $now = Carbon::now();
+        $notifications = $request->user()->notifications;
 
-        foreach ($bookings as $booking) {
-            $carName = $booking->car ? $booking->car->name : 'Car';
-            $startDate = Carbon::parse($booking->start_date);
-            $endDate = Carbon::parse($booking->end_date);
+        $formatted = $notifications->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'type' => $notification->data['type'] ?? 'info',
+                'title' => $notification->data['title'] ?? 'Notification',
+                'message' => $notification->data['message'] ?? '',
+                'time' => $notification->created_at->diffForHumans(),
+                'read_at' => $notification->read_at,
+            ];
+        });
 
-            // 1. إشعار: الدفع معلق (Pending Payment)
-            if ($booking->payment_status === 'unpaid') {
-                $notifications->push([
-                    'type' => 'pending',
-                    'title' => 'Pending Payment',
-                    'message' => "Your booking for {$carName} is pending. Please complete the payment.",
-                    'time' => $booking->created_at->diffForHumans(), // تولد صيغة مثل "2 hours ago"
-                    'sort_time' => $booking->created_at
-                ]);
-            }
-
-            // 2. إشعار: تأكيد الحجز (Booking confirmation)
-            if ($booking->payment_status === 'paid' && $booking->status === 'done') {
-                $notifications->push([
-                    'type' => 'confirmation',
-                    'title' => 'Booking confirmation',
-                    'message' => "Your booking for {$carName} has been confirmed from {$startDate->format('M d')} to {$endDate->format('M d')}.",
-                    'time' => $booking->updated_at->diffForHumans(),
-                    'sort_time' => $booking->updated_at
-                ]);
-            }
-
-            // 3. إشعار: تذكير (Reminder) - إذا كان الاستلام خلال 24 ساعة
-            if ($booking->payment_status === 'paid' && $booking->status === 'done' && $startDate->isFuture() && $startDate->diffInHours($now) <= 24) {
-                $notifications->push([
-                    'type' => 'reminder',
-                    'title' => 'Reminder',
-                    'message' => "Your pickup time for {$carName} is approaching.",
-                    'time' => 'Just now',
-                    'sort_time' => $now
-                ]);
-            }
-
-            // 4. إشعار: انتهاء المدة (Expired)
-            if ($booking->payment_status === 'paid' && $booking->status === 'done' && $endDate->isPast()) {
-                $notifications->push([
-                    'type' => 'expired',
-                    'title' => 'The reservation period has expired',
-                    'message' => "Your booking for {$carName} has ended. Please return or extend your booking.",
-                    'time' => $endDate->diffForHumans(),
-                    'sort_time' => $endDate
-                ]);
-            }
-        }
-
-        // ترتيب الإشعارات من الأحدث للأقدم وإرسالها
-        $sortedNotifications = $notifications->sortByDesc('sort_time')->values()->all();
-
-        return response()->json($sortedNotifications);
+        return response()->json($formatted);
     }
 }

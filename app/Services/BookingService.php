@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use App\Notifications\BookingNotification;
 
 class BookingService
 {
@@ -82,6 +83,14 @@ class BookingService
                 'status' => 'pending',
             ]);
 
+            // 4. إرسال إشعار الدفع المعلق
+            $booking->user->notify(new BookingNotification(
+                'Pending Payment',
+                "Your booking for {$car->name} is pending. Please complete the payment.",
+                'pending',
+                $booking->id
+            ));
+
             return [
                 'booking' => $booking,
                 'paymentIntent' => $paymentIntent,
@@ -108,6 +117,18 @@ class BookingService
             if (Carbon::parse($booking->start_date)->isToday() || Carbon::parse($booking->start_date)->isPast()) {
                 $booking->car->update(['status' => 'booked']);
             }
+
+            // إرسال إشعار تأكيد الحجز
+            $carName = $booking->car ? $booking->car->name : 'Car';
+            $startDate = Carbon::parse($booking->start_date);
+            $endDate = Carbon::parse($booking->end_date);
+            
+            $booking->user->notify(new BookingNotification(
+                'Booking confirmation',
+                "Your booking for {$carName} has been confirmed from {$startDate->format('M d')} to {$endDate->format('M d')}.",
+                'confirmation',
+                $booking->id
+            ));
 
             return $booking;
         });
