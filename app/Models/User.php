@@ -29,6 +29,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'longitude',
         'otp_code',
         'otp_expires_at',
+        'google_id',
+        'avatar',
         'status',
         'balance',
     ];

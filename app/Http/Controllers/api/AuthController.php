@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Cache; // للتعامل مع الذاكرة المؤقتة (Cache)
+use Illuminate\Support\Facades\Cache;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -343,5 +344,97 @@ class AuthController extends Controller
         ]);
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    // =========================================================================
+    // Google Authentication
+    // =========================================================================
+
+    /**
+     * Redirect to Google for authentication.
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
+    }
+
+    /**
+     * Handle Google authentication callback.
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+            
+            return $this->loginOrCreateUser($googleUser);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Google authentication failed: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Handle Google authentication from Mobile (using access token or id token).
+     */
+    public function handleGoogleToken(Request $request)
+    {
+        $request->validate([
+            'access_token' => 'required|string',
+        ]);
+
+        try {
+            // Using Socialite to get user from token
+            $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->access_token);
+            
+            return $this->loginOrCreateUser($googleUser);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid Google token: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /**
+     * Find or create user and return token.
+     */
+    protected function loginOrCreateUser($googleUser)
+    {
+        $user = User::where('google_id', $googleUser->id)
+                    ->orWhere('email', $googleUser->email)
+                    ->first();
+
+        if ($user) {
+            // Update user info if found
+            $user->update([
+                'google_id' => $googleUser->id,
+                'avatar' => $googleUser->avatar,
+                'email_verified_at' => $user->email_verified_at ?? now(),
+            ]);
+        } else {
+            // Create new user
+            $user = User::create([
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
+                'google_id' => $googleUser->id,
+                'avatar' => $googleUser->avatar,
+                'role' => UserRole::USER,
+                'email_verified_at' => now(),
+                'password' => Hash::make(str()->random(24)), // Random password for social login
+            ]);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ]);
     }
 }

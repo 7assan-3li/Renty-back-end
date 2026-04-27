@@ -140,6 +140,49 @@ Errors generally return `{ "message": "Error description" }` with appropriate st
 
 ---
 
+## 1.1 Google Authentication
+
+This section covers how to authenticate using Google. There are two main flows: **Web/Redirect Flow** (for browser-based testing) and **Mobile/Token Flow** (recommended for Flutter).
+
+### A. Mobile/Token Flow (Recommended for Flutter)
+
+This flow is designed for native apps. The Flutter app handles the Google Sign-In locally and sends the `accessToken` to the backend.
+
+- **Method**: `POST`
+- **Endpoint**: `/auth/google/token`
+- **Token Required**: No
+- **Body**:
+    ```json
+    {
+        "access_token": "GOOGLE_ACCESS_TOKEN_FROM_FLUTTER"
+    }
+    ```
+- **Description**: 
+    1. The Flutter app uses `google_sign_in` to get a Google `accessToken`.
+    2. The app sends this token to this endpoint.
+    3. The server verifies the token with Google.
+    4. If the user doesn't exist, a new account is created.
+    5. The server returns a Sanctum `access_token` for your API.
+
+- **Success Response**:
+    ```json
+    {
+        "status": true,
+        "user": { ... },
+        "access_token": "1|abcdef...",
+        "token_type": "Bearer"
+    }
+    ```
+
+### B. Web/Redirect Flow (For Testing)
+
+- **Redirect URL**: `/auth/google` (Redirects user to Google Login page)
+- **Callback URL**: `/auth/google/callback` (Handled by the server automatically)
+
+- **Description**: Standard Socialite redirect flow. Used mainly for web interfaces or quick server-side testing.
+
+---
+
 ## 2. User Profile (Protected)
 
 **Requires Header**: `Authorization: Bearer <token>`
