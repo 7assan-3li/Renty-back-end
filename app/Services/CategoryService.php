@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\Storage;
 
 class CategoryService
 {
+    protected $imageService;
+
+    public function __construct(ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     /**
      * Get all categories.
      */
@@ -22,7 +29,8 @@ class CategoryService
     public function store(array $data)
     {
         if (isset($data['image'])) {
-            $data['image'] = $data['image']->store('categories', 'public');
+            $images = $this->imageService->processImage($data['image'], 'categories');
+            $data['image'] = json_encode($images);
         }
 
         return Category::create($data);
@@ -34,11 +42,12 @@ class CategoryService
     public function update(Category $category, array $data)
     {
         if (isset($data['image'])) {
-            // Delete old image if exists
+            // Delete old images if exists
             if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+                $this->imageService->deleteImage($category->image);
             }
-            $data['image'] = $data['image']->store('categories', 'public');
+            $images = $this->imageService->processImage($data['image'], 'categories');
+            $data['image'] = json_encode($images);
         }
 
         $category->update($data);
@@ -52,7 +61,7 @@ class CategoryService
     public function delete(Category $category)
     {
         if ($category->image) {
-            Storage::disk('public')->delete($category->image);
+            $this->imageService->deleteImage($category->image);
         }
 
         return $category->delete();

@@ -69,7 +69,17 @@
                     <tr>
                         <td>
                             @if($category->image)
-                                <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;">
+                                @php
+                                    $categoryImages = $category->getImages();
+                                    $thumbnail = $categoryImages['thumbnail'] ?? null;
+                                @endphp
+                                @if($thumbnail)
+                                    <img src="{{ $thumbnail }}" alt="{{ $category->name }}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;">
+                                @else
+                                    <div style="width: 40px; height: 40px; background: #eee; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        <i class="fa-regular fa-image"></i>
+                                    </div>
+                                @endif
                             @else
                                 <div style="width: 40px; height: 40px; background: #eee; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
                                     <i class="fa-regular fa-image"></i>

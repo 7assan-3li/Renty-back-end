@@ -19,12 +19,39 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
-        $bookings = \App\Models\Booking::with(['car', 'payment'])
+        $bookings = \App\Models\Booking::with(['car.category', 'payment'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
 
         return response()->json($bookings);
+    }
+
+    public function show(Request $request, $id)
+    {
+        $booking = \App\Models\Booking::with(['car.category', 'payment'])
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        // إضافة عدد الأيام يدوياً في الرد
+        $startDate = \Carbon\Carbon::parse($booking->start_date);
+        $endDate = \Carbon\Carbon::parse($booking->end_date);
+        $booking->rental_days = $startDate->diffInDays($endDate) + 1;
+
+        return response()->json($booking);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $booking = \App\Models\Booking::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->where('payment_status', 'unpaid') // السماح بحذف غير المدفوع فقط
+            ->firstOrFail();
+
+        $booking->delete();
+
+        return response()->json(['message' => 'Booking deleted successfully']);
     }
 
     public function store(StoreBookingRequest $request)

@@ -28,7 +28,7 @@ class StoreCarRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'model' => 'required|string|max:255',
             'price_per_day' => 'required|numeric|min:0',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:20480',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:51200',
             'description' => 'nullable|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',

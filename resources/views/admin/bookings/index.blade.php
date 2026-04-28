@@ -46,7 +46,11 @@
                                 <td>
                                     @if($booking->car)
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset('storage/' . $booking->car->image) }}" alt="" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                            @php
+                                                $carImages = $booking->car->images_urls;
+                                                $carThumbnail = is_array($carImages) ? ($carImages['thumbnail'] ?? $carImages['original'] ?? '') : asset('storage/' . $booking->car->image);
+                                            @endphp
+                                            <img src="{{ $carThumbnail }}" alt="" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
                                             <div>
                                                 <div class="fw-bold">{{ $booking->car->name }}</div>
                                                 <div class="text-muted small">{{ $booking->car->model }}</div>

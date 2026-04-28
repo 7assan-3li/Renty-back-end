@@ -30,7 +30,11 @@
                         <tr>
                             <td style="font-weight:bold">
                                 <div style="display:flex; align-items:center; gap:10px;">
-                                    <img src="{{ $user->image ? asset('storage/' . $user->image) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random' }}"
+                                    @php
+                                        $avatarUrls = $user->avatar_urls;
+                                        $thumbnail = $avatarUrls['thumbnail'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random';
+                                    @endphp
+                                    <img src="{{ $thumbnail }}"
                                         style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
                                     {{ $user->name }}
                                 </div>

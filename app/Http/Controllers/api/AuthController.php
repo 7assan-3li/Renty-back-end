@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Socialite\Facades\Socialite;
+use App\Services\ImageService;
 
 class AuthController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
     /* =========================================================================
     دالة التسجيل القديمة (تم تحويلها لتعليق)
     =========================================================================
@@ -278,6 +285,44 @@ class AuthController extends Controller
             'message' => 'Profile updated successfully',
             'user' => $user
         ]);
+    }
+
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            // حذف الصورة القديمة إذا كانت موجودة في التخزين المحلي
+            if ($user->avatar) {
+                $avatarData = $user->avatar;
+                if (is_array($avatarData)) {
+                    foreach ($avatarData as $path) {
+                        if (!empty($path) && is_string($path) && !str_starts_with($path, 'http')) {
+                            $this->imageService->deleteImage($path);
+                        }
+                    }
+                } elseif (is_string($avatarData) && !str_starts_with($avatarData, 'http')) {
+                    $this->imageService->deleteImage($avatarData);
+                }
+            }
+
+            $images = $this->imageService->processImage($request->file('avatar'), 'avatars');
+            $user->avatar = $images;
+            $user->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Avatar updated successfully',
+                'avatar_urls' => $user->avatar_urls,
+                'user' => $user
+            ]);
+        }
+
+        return response()->json(['status' => false, 'message' => 'No file uploaded'], 400);
     }
 
     public function changePassword(Request $request)

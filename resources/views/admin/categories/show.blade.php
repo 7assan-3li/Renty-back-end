@@ -17,7 +17,17 @@
         <div class="card" style="display: block;">
             <div style="display: flex; gap: 20px; align-items: flex-start;">
                 @if($category->image)
-                    <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px;">
+                    @php
+                        $categoryImages = $category->getImages();
+                        $original = $categoryImages['original'] ?? null;
+                    @endphp
+                    @if($original)
+                        <img src="{{ $original }}" alt="{{ $category->name }}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px;">
+                    @else
+                        <div style="width: 150px; height: 150px; background: #eee; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #999;">
+                            <i class="fa-regular fa-image"></i>
+                        </div>
+                    @endif
                 @else
                     <div style="width: 150px; height: 150px; background: #eee; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #999;">
                         <i class="fa-regular fa-image"></i>
@@ -63,7 +73,17 @@
                     <tr>
                         <td>
                             @if($car->image)
-                                <img src="{{ Storage::url($car->image) }}" alt="{{ $car->name }}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;">
+                                @php
+                                    $carImages = $car->getImages();
+                                    $thumbnail = $carImages['thumbnail'] ?? null;
+                                @endphp
+                                @if($thumbnail)
+                                    <img src="{{ $thumbnail }}" alt="{{ $car->name }}" style="width: 40px; height: 40px; border-radius: 5px; object-fit: cover;">
+                                @else
+                                    <div style="width: 40px; height: 40px; background: #eee; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        <i class="fa-solid fa-car"></i>
+                                    </div>
+                                @endif
                             @else
                                 <div style="width: 40px; height: 40px; background: #eee; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
                                     <i class="fa-solid fa-car"></i>

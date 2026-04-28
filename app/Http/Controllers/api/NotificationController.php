@@ -20,12 +20,17 @@ class NotificationController extends Controller
                 'type' => $notification->data['type'] ?? 'info',
                 'title' => $notification->data['title'] ?? 'Notification',
                 'message' => $notification->data['message'] ?? '',
+                'booking_id' => $notification->data['booking_id'] ?? null, // إضافة رقم الحجز هنا
                 'time' => $notification->created_at->diffForHumans(),
                 'read_at' => $notification->read_at,
+                'data' => $notification->data, // إرسال كل البيانات للحتياط
             ];
         });
 
-        return response()->json($formatted);
+        return response()->json([
+            'notifications' => $formatted,
+            'unread_count' => $request->user()->unreadNotifications()->count(),
+        ]);
     }
 
     /**
@@ -52,6 +57,20 @@ class NotificationController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'All notifications marked as read'
+        ]);
+    }
+
+    /**
+     * Delete a specific notification.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $notification = $request->user()->notifications()->findOrFail($id);
+        $notification->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Notification deleted successfully'
         ]);
     }
 }

@@ -60,7 +60,11 @@
                     @foreach($topCars as $car)
                         <li
                             style="display:flex; align-items:center; gap:10px; margin-bottom:15px; border-bottom:1px solid #f9f9f9; padding-bottom:10px;">
-                            <img src="{{ asset('storage/' . $car->image) }}"
+                            @php
+                                $carImages = $car->images_urls;
+                                $carThumbnail = is_array($carImages) ? ($carImages['thumbnail'] ?? $carImages['original'] ?? '') : asset('storage/' . $car->image);
+                            @endphp
+                            <img src="{{ $carThumbnail }}"
                                 style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
                             <div>
                                 <h4 style="margin:0; font-size:14px;">{{ $car->name }}</h4>

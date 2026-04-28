@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Storage;
 
 class CarService
 {
+    protected $imageService;
+
+    public function __construct(ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     /**
      * Get all cars with their category.
      */
@@ -54,7 +61,8 @@ class CarService
     public function store(array $data)
     {
         if (isset($data['image'])) {
-            $data['image'] = $data['image']->store('cars', 'public');
+            $images = $this->imageService->processImage($data['image'], 'cars');
+            $data['image'] = json_encode($images);
         }
 
         return Car::create($data);
@@ -68,9 +76,10 @@ class CarService
         if (isset($data['image'])) {
             // Delete old image if exists
             if ($car->image) {
-                Storage::disk('public')->delete($car->image);
+                $this->imageService->deleteImage($car->image);
             }
-            $data['image'] = $data['image']->store('cars', 'public');
+            $images = $this->imageService->processImage($data['image'], 'cars');
+            $data['image'] = json_encode($images);
         }
 
         $car->update($data);
@@ -84,7 +93,7 @@ class CarService
     public function delete(Car $car)
     {
         if ($car->image) {
-            Storage::disk('public')->delete($car->image);
+            $this->imageService->deleteImage($car->image);
         }
 
         return $car->delete();

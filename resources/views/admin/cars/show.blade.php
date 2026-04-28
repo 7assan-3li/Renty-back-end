@@ -20,8 +20,19 @@
         <div class="card" style="display: block; grid-column: span 2;">
             <div style="display: flex; gap: 30px; align-items: flex-start;">
                 @if($car->image)
-                    <img src="{{ Storage::url($car->image) }}" alt="{{ $car->name }}"
-                        style="width: 300px; height: 200px; object-fit: cover; border-radius: 10px;">
+                    @php
+                        $carImages = $car->getImages();
+                        $original = $carImages['original'] ?? null;
+                    @endphp
+                    @if($original)
+                        <img src="{{ $original }}" alt="{{ $car->name }}"
+                            style="width: 300px; height: 200px; object-fit: cover; border-radius: 10px;">
+                    @else
+                        <div
+                            style="width: 300px; height: 200px; background: #eee; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #999;">
+                            <i class="fa-solid fa-car"></i>
+                        </div>
+                    @endif
                 @else
                     <div
                         style="width: 300px; height: 200px; background: #eee; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #999;">

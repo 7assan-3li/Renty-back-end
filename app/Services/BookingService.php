@@ -26,6 +26,7 @@ class BookingService
         $totalPrice = $car->price_per_day * $days;
 
         // التحقق من توفر السيارة
+        // السيارة تعتبر غير متاحة فقط وفقط إذا كان هناك حجز مدفوع بنجاح (Paid)
         $isAvailable = !Booking::where('car_id', $car->id)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('start_date', [$startDate, $endDate])
@@ -35,11 +36,11 @@ class BookingService
                             ->where('end_date', '>', $endDate);
                     });
             })
-            ->where('status', '!=', 'cancelled') // لا نحسب الحجوزات الملغية
+            ->where('payment_status', 'paid') // لا تمنع الحجز إلا إذا تم الدفع فعلياً
             ->exists();
 
         if (!$isAvailable) {
-            throw new \Exception('Car is not available for the selected dates.');
+            throw new \Exception('Car is already booked and paid for these dates.');
         }
 
         return DB::transaction(function () use ($userId, $data, $totalPrice, $car) {
@@ -118,7 +119,13 @@ class BookingService
                 $booking->car->update(['status' => 'booked']);
             }
 
-            // إرسال إشعار تأكيد الحجز
+            // حذف إشعارات "الدفع المعلق" القديمة لهذا الحجز لكي لا تظل تظهر كـ "غير مدفوع"
+            $booking->user->notifications()
+                ->where('data->booking_id', $booking->id)
+                ->where('data->type', 'pending')
+                ->delete();
+
+            // إرسال إشعار تأكيد الحجز الجديد
             $carName = $booking->car ? $booking->car->name : 'Car';
             $startDate = Carbon::parse($booking->start_date);
             $endDate = Carbon::parse($booking->end_date);

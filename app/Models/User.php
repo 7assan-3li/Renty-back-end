@@ -35,6 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'balance',
     ];
 
+    protected $appends = ['avatar_urls'];
+
     /**
      * Check if the user is an admin.
      */
@@ -63,6 +65,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'avatar' => 'array',
         ];
     }
 
@@ -79,5 +82,41 @@ class User extends Authenticatable implements MustVerifyEmail
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function getAvatarUrlsAttribute()
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        $images = $this->avatar;
+
+        if (is_string($images) && str_starts_with($images, 'http')) {
+            return [
+                'original' => $images,
+                'thumbnail' => $images,
+                'small' => $images,
+                'medium' => $images,
+            ];
+        }
+
+        if (!is_array($images)) {
+            $path = is_string($images) ? $images : null;
+            if (!$path) return null;
+            
+            $fullUrl = str_starts_with($path, 'http') ? $path : url('storage/' . $path);
+            return [
+                'original' => $fullUrl,
+                'thumbnail' => $fullUrl,
+                'small' => $fullUrl,
+                'medium' => $fullUrl,
+            ];
+        }
+
+        return array_map(function ($path) {
+            if (empty($path)) return null;
+            return str_starts_with($path, 'http') ? $path : url('storage/' . $path);
+        }, $images);
     }
 }

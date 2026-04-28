@@ -129,7 +129,11 @@
 
                         <div id="image-preview"
                             style="{{ $car->image ? 'display: block;' : 'display: none;' }} width: 100%; height: 100%;">
-                            <img id="preview-img" src="{{ $car->image ? Storage::url($car->image) : '#' }}" alt="Preview"
+                            @php
+                                $carImages = $car->getImages();
+                                $previewUrl = $carImages['original'] ?? '#';
+                            @endphp
+                            <img id="preview-img" src="{{ $previewUrl }}" alt="Preview"
                                 style="max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         </div>
 

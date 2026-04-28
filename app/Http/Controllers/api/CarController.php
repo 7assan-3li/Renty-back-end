@@ -22,7 +22,7 @@ class CarController extends Controller
     {
         $filters = $request->only(['category_id', 'search', 'min_price', 'max_price']);
         $cars = $this->carService->getAll($filters);
-        return response()->json(CarResource::collection($cars));
+        return CarResource::collection($cars);
     }
 
     public function show($id)
@@ -47,5 +47,29 @@ class CarController extends Controller
     {
         $favorites = $this->carService->getFavorites($request->user()->id);
         return CarResource::collection($favorites);
+    }
+
+    public function toggleStar(Request $request, $id)
+    {
+        $car = \App\Models\Car::findOrFail($id);
+        $user = $request->user();
+        
+        $exists = $car->starredBy()->where('user_id', $user->id)->exists();
+        
+        if ($exists) {
+            $car->starredBy()->detach($user->id);
+            $car->decrement('stars_count');
+            $status = 'removed';
+        } else {
+            $car->starredBy()->attach($user->id);
+            $car->increment('stars_count');
+            $status = 'added';
+        }
+        
+        return response()->json([
+            'status' => $status,
+            'stars_count' => $car->stars_count,
+            'is_starred' => !$exists
+        ]);
     }
 }

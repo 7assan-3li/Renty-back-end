@@ -114,7 +114,17 @@
                     <tr>
                         <td>
                             @if($car->image)
-                                <img src="{{ Storage::url($car->image) }}" alt="{{ $car->name }}" style="width: 50px; height: 35px; border-radius: 4px; object-fit: cover;">
+                                @php
+                                    $carImages = $car->getImages();
+                                    $thumbnail = $carImages['thumbnail'] ?? null;
+                                @endphp
+                                @if($thumbnail)
+                                    <img src="{{ $thumbnail }}" alt="{{ $car->name }}" style="width: 50px; height: 35px; border-radius: 4px; object-fit: cover;">
+                                @else
+                                    <div style="width: 50px; height: 35px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        <i class="fa-solid fa-car"></i>
+                                    </div>
+                                @endif
                             @else
                                 <div style="width: 50px; height: 35px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">
                                     <i class="fa-solid fa-car"></i>

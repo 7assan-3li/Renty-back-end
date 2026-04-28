@@ -46,7 +46,11 @@
 
                         <div id="image-preview"
                             style="{{ $category->image ? 'display: block;' : 'display: none;' }} width: 100%; height: 100%;">
-                            <img id="preview-img" src="{{ $category->image ? Storage::url($category->image) : '#' }}"
+                            @php
+                                $categoryImages = $category->getImages();
+                                $previewUrl = $categoryImages['original'] ?? '#';
+                            @endphp
+                            <img id="preview-img" src="{{ $previewUrl }}"
                                 alt="Preview"
                                 style="max-width: 100%; max-height: 200px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         </div>

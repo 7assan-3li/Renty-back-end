@@ -18,7 +18,7 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($user->id)],
-            'image' => ['nullable', 'image', 'max:2048'], // 2MB Max
+            'image' => ['nullable', 'image', 'max:51200'], // 50MB Max
         ]);
 
         if ($request->hasFile('image')) {
