@@ -21,7 +21,13 @@ class CarService
      */
     public function getAll(array $filters = [])
     {
-        $query = Car::with('category')->latest();
+        $query = Car::with('category')
+            ->where('status', CarStatus::AVAILABLE)
+            ->whereDoesntHave('bookings', function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->where('finished', 'No');
+            })
+            ->latest();
 
         if (isset($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
@@ -120,6 +126,14 @@ class CarService
 
     public function getFavorites($userId)
     {
-        return \App\Models\User::findOrFail($userId)->favorites()->with('category')->get();
+        return \App\Models\User::findOrFail($userId)
+            ->favorites()
+            ->where('status', CarStatus::AVAILABLE)
+            ->whereDoesntHave('bookings', function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->where('finished', 'No');
+            })
+            ->with('category')
+            ->get();
     }
 }

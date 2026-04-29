@@ -21,6 +21,7 @@
                             <th>{{ __('totalPrice') }}</th>
                             <th>{{ __('status') }}</th>
                             <th>{{ __('payment') }}</th>
+                            <th>{{ __('finished') }}</th>
                             <th>{{ __('actions') }}</th>
                         </tr>
                     </thead>
@@ -87,6 +88,13 @@
                                         @endif
                                     @else
                                         <span class="badge bg-secondary">{{ __('unpaid') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($booking->finished == 'Yes')
+                                        <span class="badge bg-success">{{ __('yes') }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ __('no') }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -168,9 +176,13 @@
                         <label>{{ __('totalPrice') }}</label>
                         <input type="text" id="modalPrice" readonly>
                     </div>
-                    <div class="col-md-6 form-group">
+                    <div class="col-md-4 form-group">
                         <label>{{ __('status') }}</label>
                         <input type="text" id="modalStatus" readonly>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label>{{ __('finished') }}</label>
+                        <input type="text" id="modalFinished" readonly>
                     </div>
                 </div>
                 <!-- You can add more details like Payment info here -->
@@ -191,6 +203,7 @@
             document.getElementById('modalEnd').value = booking.end_date;
             document.getElementById('modalPrice').value = '$' + booking.total_price;
             document.getElementById('modalStatus').value = booking.status;
+            document.getElementById('modalFinished').value = booking.finished;
             
             document.getElementById('bookingModal').classList.add('active');
         }

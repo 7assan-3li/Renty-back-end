@@ -59,16 +59,24 @@ class BookingController extends Controller
         try {
             $result = $this->bookingService->createBooking($request->user()->id, $request->validated());
 
-            return response()->json([
+            $response = [
+                'status' => true,
                 'message' => 'Booking initiated successfully',
                 'booking_id' => $result['booking']->id,
                 'user_id' => $request->user()->id,
-                'client_secret' => $result['paymentIntent']->client_secret,
-                'amount' => $result['paymentIntent']->amount / 100,
-                'currency' => $result['paymentIntent']->currency,
-            ], 201);
+                'payment_method' => $result['payment_method'],
+            ];
+
+            // إذا كان الدفع عبر Stripe، نضيف الـ client_secret
+            if ($result['payment_method'] === 'Stripe') {
+                $response['client_secret'] = $result['paymentIntent']->client_secret;
+                $response['amount'] = $result['paymentIntent']->amount / 100;
+                $response['currency'] = $result['paymentIntent']->currency;
+            }
+
+            return response()->json($response, 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+            return response()->json(['error' => $e->getMessage(), 'status' => false], 400);
         }
     }
 

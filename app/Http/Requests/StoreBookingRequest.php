@@ -22,6 +22,8 @@ class StoreBookingRequest extends FormRequest
             'end_date' => 'required|date|after_or_equal:start_date',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
+            'payment_method' => 'nullable|string',
+            'total_price' => 'nullable|numeric',
         ];
     }
 }

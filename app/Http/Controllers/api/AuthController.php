@@ -476,10 +476,9 @@ class AuthController extends Controller
                     ->first();
 
         if ($user) {
-            // Update user info if found
+            // تحديث google_id فقط إذا لم يكن موجوداً، ولا نلمس الـ avatar أو الاسم
             $user->update([
-                'google_id' => $googleUser->id,
-                'avatar' => $googleUser->avatar,
+                'google_id' => $user->google_id ?? $googleUser->id,
                 'email_verified_at' => $user->email_verified_at ?? now(),
             ]);
         } else {

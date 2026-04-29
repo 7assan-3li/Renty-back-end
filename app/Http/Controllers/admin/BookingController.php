@@ -40,6 +40,7 @@ class BookingController extends Controller
         // Logic to free Car Status if Cancelled or Completed
         if (in_array($validated['status'], [\App\Constants\BookingStatus::CANCELLED, \App\Constants\BookingStatus::COMPLETED])) {
             $booking->car->update(['status' => \App\Constants\CarStatus::AVAILABLE]);
+            $booking->update(['finished' => 'Yes']);
         }
 
         return redirect()->back()->with('success', 'Booking status updated successfully.');
