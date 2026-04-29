@@ -51,8 +51,20 @@ class Category extends Model
             ];
         }
 
+        // If it's an indexed array
+        if (isset($images[0]) && !isset($images['original'])) {
+            return [
+                'original' => url('storage/' . $images[0]),
+                'thumbnail' => url('storage/' . $images[0]),
+                'small' => url('storage/' . $images[0]),
+                'medium' => url('storage/' . $images[0]),
+            ];
+        }
+
         return array_map(function ($path) {
-            return url('storage/' . $path);
+            // استبدال أي مائل عكسي (Windows style) بمائل عادي للروابط
+            $path = str_replace('\\', '/', $path);
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
         }, $images);
     }
 }

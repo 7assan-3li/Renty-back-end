@@ -18,8 +18,12 @@
 
         <!-- User Profile -->
         <div style="cursor:pointer; display:flex; align-items:center; gap:10px;" onclick="openUserProfile()">
-            <img src="{{ auth()->user()->image ? Storage::url(auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=008b96&color=fff' }}"
-                style="width:40px; height:40px; border-radius:50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            @php
+                $avatarUrls = auth()->user()->avatar_urls;
+                $thumbnail = $avatarUrls['thumbnail'] ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=008b96&color=fff';
+            @endphp
+            <img src="{{ $thumbnail }}"
+                style="width:40px; height:40px; border-radius:50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); object-fit: cover;">
             <div style="display:flex; flex-direction:column; line-height:1.2;">
                 <span
                     style="font-size:14px; font-weight:bold; color:var(--text-color);">{{ auth()->user()->name }}</span>

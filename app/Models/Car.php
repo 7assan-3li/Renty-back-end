@@ -75,16 +75,29 @@ class Car extends Model
 
         if (!is_array($images)) {
             // Fallback for old single image string
+            $path = $this->image;
             return [
-                'original' => url('storage/' . $this->image),
-                'thumbnail' => url('storage/' . $this->image),
-                'small' => url('storage/' . $this->image),
-                'medium' => url('storage/' . $this->image),
+                'original' => url('storage/' . $path),
+                'thumbnail' => url('storage/' . $path),
+                'small' => url('storage/' . $path),
+                'medium' => url('storage/' . $path),
+            ];
+        }
+
+        // If it's an indexed array (like from seeder before fix)
+        if (isset($images[0]) && !isset($images['original'])) {
+            return [
+                'original' => url('storage/' . $images[0]),
+                'thumbnail' => url('storage/' . $images[0]),
+                'small' => url('storage/' . $images[0]),
+                'medium' => url('storage/' . $images[0]),
             ];
         }
 
         return array_map(function ($path) {
-            return url('storage/' . $path);
+            // استبدال أي مائل عكسي (Windows style) بمائل عادي للروابط
+            $path = str_replace('\\', '/', $path);
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
         }, $images);
     }
 }

@@ -21,6 +21,16 @@ class DatabaseSeeder extends Seeder
             'phone' => '1234567890',
         ]);
 
+        // --- مستخدم أحمد ---
+        User::factory()->create([
+            'name'     => 'Ahmed',
+            'email'    => 'Ahmed@gmail.com',
+            'phone'    => '77019481',
+            'password' => \Illuminate\Support\Facades\Hash::make('ahmed0073'),
+            'role'     => \App\Constants\UserRole::ADMIN,
+        ]);
+
         $this->call(AdminUserSeeder::class);
+        $this->call(CategoryCarSeeder::class);
     }
 }

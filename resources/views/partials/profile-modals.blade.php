@@ -3,8 +3,12 @@
     <div class="modal" style="padding:0; overflow:hidden; width:400px;">
         <div class="profile-header-bg">
             <div style="position:relative; display:inline-block;">
-                <img src="{{ auth()->user()->image ? Storage::url(auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=008b96&color=fff' }}"
-                    class="profile-avatar">
+                @php
+                    $avatarUrls = auth()->user()->avatar_urls;
+                    $thumbnail = $avatarUrls['thumbnail'] ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=008b96&color=fff';
+                @endphp
+                <img src="{{ $thumbnail }}"
+                    class="profile-avatar" style="object-fit: cover;">
                 <div class="profile-status"></div>
             </div>
             <h3 style="margin-top:10px;" id="admin-name-display">{{ auth()->user()->name }}</h3>

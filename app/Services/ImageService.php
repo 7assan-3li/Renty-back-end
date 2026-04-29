@@ -30,40 +30,29 @@ class ImageService
         $timestamp = time();
         $baseName = "{$filename}_{$timestamp}";
         
-        // 1. Save Original Image (as uploaded, potentially up to 50MB)
-        $originalPath = $file->storeAs($directory, "{$baseName}_original." . $file->getClientOriginalExtension(), 'public');
-
-        // 2. Generate Optimized Variants in WebP
-        $variants = [
-            'thumbnail' => ['width' => 150, 'height' => 150],
-            'small'     => ['width' => 400, 'height' => null],
-            'medium'    => ['width' => 800, 'height' => null],
-        ];
-
-        $paths = [
-            'original' => $originalPath,
-        ];
-
-        foreach ($variants as $key => $size) {
-            $image = $this->manager->decode($file);
-            
-            if ($size['height']) {
-                $image->cover($size['width'], $size['height']);
-            } else {
-                $image->scale(width: $size['width']);
-            }
-
-            $variantPath = "{$directory}/{$baseName}_{$key}.webp";
-            
-            // Encode as WebP with 80% quality
-            $encoded = $image->encodeUsingFileExtension('webp', quality: 80);
-            
-            Storage::disk('public')->put($variantPath, (string) $encoded);
-            
-            $paths[$key] = $variantPath;
+        // 1. الصورة الأساسية (للتفاصيل) - عرض 600 بكسل (كافٍ جداً للموبايل وسريع)
+        $mainPath = "{$directory}/{$baseName}_main.webp";
+        $mainImage = $this->manager->decode($file);
+        if ($mainImage->width() > 600) {
+            $mainImage->scale(width: 600);
         }
+        $mainEncoded = $mainImage->encodeUsingFileExtension('webp', quality: 60);
+        Storage::disk('public')->put($mainPath, (string) $mainEncoded);
 
-        return $paths;
+        // 2. الصورة المصغرة (للقوائم والسرعة القصوى) - عرض 150 بكسل
+        $thumbPath = "{$directory}/{$baseName}_thumb.webp";
+        $thumbImage = $this->manager->decode($file);
+        $thumbImage->cover(150, 150); // قص مربع صغير جداً
+        $thumbEncoded = $thumbImage->encodeUsingFileExtension('webp', quality: 50);
+        Storage::disk('public')->put($thumbPath, (string) $thumbEncoded);
+
+        // إرجاع المسارات
+        return [
+            'original'  => $mainPath,
+            'medium'    => $mainPath,
+            'small'     => $thumbPath,
+            'thumbnail' => $thumbPath,
+        ];
     }
 
     /**

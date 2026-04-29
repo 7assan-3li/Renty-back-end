@@ -10,6 +10,13 @@ use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(\App\Services\ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     public function update(Request $request)
     {
         $user = auth()->user();
@@ -22,14 +29,29 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // Delete old image if exists and not default
-            if ($user->image && Storage::exists($user->image)) {
-                Storage::delete($user->image);
+            // حذف الصور القديمة من الـ avatar والـ image
+            if ($user->avatar) {
+                $this->imageService->deleteImage($user->avatar);
             }
-            $validated['image'] = $request->file('image')->store('profile-images', 'public');
+            if ($user->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->image);
+            }
+
+            // استخدام نظام المعالجة الجديد (صورتين WebP مضغوطة)
+            $images = $this->imageService->processImage($request->file('image'), 'avatars');
+            
+            // تحديث الحقلين لضمان التوافق التام
+            $user->avatar = $images;
+            $user->image = $images['original'];
         }
 
-        $user->update($validated);
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+        ]);
+        
+        $user->save();
 
         return response()->json([
             'success' => true,

@@ -427,12 +427,34 @@ class AuthController extends Controller
     public function handleGoogleToken(Request $request)
     {
         $request->validate([
-            'access_token' => 'required|string',
+            'access_token' => 'required_without:id_token|string',
+            'id_token' => 'required_without:access_token|string',
         ]);
 
         try {
-            // Using Socialite to get user from token
-            $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->access_token);
+            if ($request->has('id_token')) {
+                // Verify via Google's tokeninfo endpoint
+                $response = \Illuminate\Support\Facades\Http::get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $request->id_token
+                ]);
+
+                if (!$response->successful()) {
+                    throw new \Exception("Failed to verify ID token: " . $response->body());
+                }
+
+                $googleData = $response->json();
+                
+                // Construct a fake object that looks like Socialite user
+                $googleUser = (object) [
+                    'id' => $googleData['sub'],
+                    'name' => $googleData['name'] ?? ($googleData['given_name'] . ' ' . ($googleData['family_name'] ?? '')),
+                    'email' => $googleData['email'],
+                    'avatar' => $googleData['picture'] ?? null,
+                ];
+            } else {
+                // Using Socialite to get user from token
+                $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->access_token);
+            }
             
             return $this->loginOrCreateUser($googleUser);
 
