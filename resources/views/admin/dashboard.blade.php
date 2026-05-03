@@ -9,7 +9,7 @@
     <div class="cards-grid">
         <div class="card">
             <div>
-                <h3>{{ $stats['totalRevenue'] }} SAR</h3>
+                <h3>{{ $stats['totalRevenue'] }} USD</h3>
                 <p>{{ __('totalRevenue') }}</p>
             </div>
             <div class="card-icon bg-green"><i class="fa-solid fa-dollar-sign"></i></div>

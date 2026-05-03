@@ -39,6 +39,8 @@ class BookingService
             ->where('payment_status', 'paid') // لا تمنع الحجز إلا إذا تم الدفع فعلياً
             ->exists();
 
+        $booking = null;
+
         if (!$isAvailable) {
             // التحقق مما إذا كان هذا المستخدم هو نفسه الذي لديه الحجز غير المدفوع
             $existingBooking = Booking::where('user_id', $userId)
@@ -54,7 +56,7 @@ class BookingService
             $booking = $existingBooking;
         }
 
-        return DB::transaction(function () use ($userId, $data, $totalPrice, $car, $booking) {
+        return DB::transaction(function () use ($userId, $data, $totalPrice, $car, &$booking) {
             $paymentMethod = $data['payment_method'] ?? 'Stripe';
             $user = \App\Models\User::findOrFail($userId);
 
